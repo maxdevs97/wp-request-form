@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordPress Site Request</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 WordPress Site Request</h1>
+            <p class="subtitle">Request a new WordPress site deployment from our base template</p>
+        </header>
+
+        <form id="requestForm">
+            <!-- Requester Information -->
+            <section class="form-section">
+                <h2>Requester Information</h2>
+                
+                <div class="form-group">
+                    <label for="requesterName">Name *</label>
+                    <input type="text" id="requesterName" name="requesterName" required 
+                           placeholder="John Doe">
+                </div>
+
+                <div class="form-group">
+                    <label for="requesterEmail">Email *</label>
+                    <input type="email" id="requesterEmail" name="requesterEmail" required 
+                           placeholder="john@example.com">
+                </div>
+            </section>
+
+            <!-- Project Details -->
+            <section class="form-section">
+                <h2>Project Details</h2>
+                
+                <div class="form-group">
+                    <label for="projectName">Project Name</label>
+                    <input type="text" id="projectName" name="projectName" 
+                           placeholder="Optional project name">
+                </div>
+
+                <div class="form-group">
+                    <label for="projectDescription">Project Description</label>
+                    <textarea id="projectDescription" name="projectDescription" rows="3"
+                              placeholder="Optional description of the project"></textarea>
+                </div>
+            </section>
+
+            <!-- Replit Configuration -->
+            <section class="form-section">
+                <h2>Front-end Configuration</h2>
+                
+                <div class="form-group">
+                    <label for="replitUrl">Replit Front-end URL *</label>
+                    <input type="url" id="replitUrl" name="replitUrl" required 
+                           placeholder="https://your-replit-project.repl.co">
+                    <small class="help-text">This URL will be configured in the custom plugin settings</small>
+                </div>
+            </section>
+
+            <!-- Post Types to Migrate -->
+            <section class="form-section">
+                <h2>Content Migration</h2>
+                <p class="section-description">Specify which post types to migrate and their source URLs</p>
+                
+                <div id="postTypesContainer">
+                    <!-- Post types will be added here dynamically -->
+                </div>
+
+                <button type="button" id="addPostType" class="btn-secondary">
+                    + Add Post Type
+                </button>
+            </section>
+
+            <!-- Submit Button -->
+            <div class="form-actions">
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    Submit Request
+                </button>
+            </div>
+        </form>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="message success" style="display: none;">
+            <h3>✅ Request Submitted Successfully!</h3>
+            <p>Your request has been received and Kit has been notified.</p>
+            <p><strong>Request ID:</strong> <span id="requestId"></span></p>
+            <button type="button" class="btn-secondary" onclick="resetForm()">
+                Submit Another Request
+            </button>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="message error" style="display: none;">
+            <h3>❌ Submission Failed</h3>
+            <p id="errorText"></p>
+            <button type="button" class="btn-secondary" onclick="hideError()">
+                Try Again
+            </button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
