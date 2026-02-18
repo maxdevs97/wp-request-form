@@ -3,9 +3,31 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Email configuration
+const EMAIL_USER = process.env.EMAIL_USER || 'noreply@sheragency.com';
+const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD || '';
+const EMAIL_HOST = process.env.EMAIL_HOST || 'smtp.gmail.com';
+const EMAIL_PORT = process.env.EMAIL_PORT || 587;
+const MAX_EMAIL = 'max@sheragency.com';
+
+// Create email transporter
+let emailTransporter = null;
+if (EMAIL_PASSWORD) {
+  emailTransporter = nodemailer.createTransport({
+    host: EMAIL_HOST,
+    port: EMAIL_PORT,
+    secure: false,
+    auth: {
+      user: EMAIL_USER,
+      pass: EMAIL_PASSWORD
+    }
+  });
+}
 
 // Middleware
 app.use(cors());
@@ -21,6 +43,61 @@ async function ensureDataDir() {
     await fs.mkdir(DATA_DIR, { recursive: true });
   } catch (err) {
     console.error('Error creating data directory:', err);
+  }
+}
+
+// Send email notification
+async function sendEmailNotification(requestData) {
+  if (!emailTransporter) {
+    console.log('Email transporter not configured. Skipping email notification.');
+    return { success: false, error: 'Email not configured' };
+  }
+
+  try {
+    const postTypesFormatted = requestData.postTypes
+      .map(pt => `  • ${pt.migrationType === 'pageTemplate' ? 'Page Template' : 'Post Type'}: ${pt.name} from ${pt.sourceUrl}`)
+      .join('\n');
+
+    const emailBody = `
+Hello ${requestData.requesterName},
+
+Your WordPress site migration request has been received and is being processed automatically.
+
+Request Details:
+----------------
+Request ID: ${requestData.id}
+Project Name: ${requestData.projectName}
+${requestData.projectDescription ? `Description: ${requestData.projectDescription}` : ''}
+Frontend URL: ${requestData.replitUrl}
+
+Migration Sources:
+${postTypesFormatted}
+
+Submitted: ${new Date(requestData.timestamp).toLocaleString()}
+
+Status: Processing automatically (no approval required)
+
+You will receive another notification once the migration is complete.
+
+---
+Sher Agency Automation System
+    `.trim();
+
+    const mailOptions = {
+      from: `"WordPress Migration System" <${EMAIL_USER}>`,
+      to: requestData.requesterEmail,
+      cc: MAX_EMAIL, // CC Max on all notifications
+      subject: `WordPress Site Request Received - ${requestData.id}`,
+      text: emailBody
+    };
+
+    const info = await emailTransporter.sendMail(mailOptions);
+    console.log('Email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -81,12 +158,15 @@ app.post('/api/submit', async (req, res) => {
       postTypes,
       projectName: projectName || 'Unnamed Project',
       projectDescription: projectDescription || '',
-      status: 'pending'
+      status: 'processing' // Auto-execute, no approval required
     };
 
     // Save request to JSON file
     const requestFile = path.join(DATA_DIR, `${id}.json`);
     await fs.writeFile(requestFile, JSON.stringify(requestData, null, 2));
+
+    // Send email notification (CC Max)
+    await sendEmailNotification(requestData);
 
     // Send Slack notification
     await sendSlackNotification(requestData);
@@ -94,7 +174,7 @@ app.post('/api/submit', async (req, res) => {
     res.json({
       success: true,
       requestId: id,
-      message: 'Request submitted successfully. Kit has been notified.'
+      message: 'Request submitted successfully and is being processed automatically. Notifications sent to requester and Max.'
     });
 
   } catch (error) {

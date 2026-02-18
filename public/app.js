@@ -1,7 +1,7 @@
 // Post types management
 let postTypeCount = 0;
 
-function addPostType(typeName = '', sourceUrl = '') {
+function addPostType(migrationType = 'postType', typeName = '', sourceUrl = '') {
     postTypeCount++;
     const container = document.getElementById('postTypesContainer');
     
@@ -11,12 +11,25 @@ function addPostType(typeName = '', sourceUrl = '') {
     
     entry.innerHTML = `
         <div class="form-group">
-            <label for="postTypeName-${postTypeCount}">Post Type Name *</label>
+            <label for="migrationType-${postTypeCount}">Migration Source Type *</label>
+            <select id="migrationType-${postTypeCount}" 
+                    name="migrationType" 
+                    onchange="toggleMigrationFields(${postTypeCount})"
+                    required>
+                <option value="postType" ${migrationType === 'postType' ? 'selected' : ''}>Post Type</option>
+                <option value="pageTemplate" ${migrationType === 'pageTemplate' ? 'selected' : ''}>Page Template</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="postTypeName-${postTypeCount}">
+                <span class="label-posttype-${postTypeCount}">Post Type Name *</span>
+                <span class="label-template-${postTypeCount}" style="display: none;">Page Template Name *</span>
+            </label>
             <input type="text" 
                    id="postTypeName-${postTypeCount}" 
                    name="postTypeName" 
                    value="${typeName}"
-                   placeholder="e.g., Blogs, News, Products"
+                   placeholder="e.g., posts, pages, custom-post-type OR Service Page template"
                    required>
         </div>
         <div class="form-group">
@@ -34,6 +47,25 @@ function addPostType(typeName = '', sourceUrl = '') {
     `;
     
     container.appendChild(entry);
+    toggleMigrationFields(postTypeCount);
+}
+
+function toggleMigrationFields(id) {
+    const selectElement = document.getElementById(`migrationType-${id}`);
+    const postTypeLabel = document.querySelector(`.label-posttype-${id}`);
+    const templateLabel = document.querySelector(`.label-template-${id}`);
+    
+    if (selectElement && postTypeLabel && templateLabel) {
+        const selectedValue = selectElement.value;
+        
+        if (selectedValue === 'postType') {
+            postTypeLabel.style.display = '';
+            templateLabel.style.display = 'none';
+        } else {
+            postTypeLabel.style.display = 'none';
+            templateLabel.style.display = '';
+        }
+    }
 }
 
 function removePostType(id) {
@@ -48,11 +80,13 @@ function getPostTypes() {
     const postTypes = [];
     
     entries.forEach(entry => {
+        const typeSelect = entry.querySelector('select[name="migrationType"]');
         const nameInput = entry.querySelector('input[name="postTypeName"]');
         const urlInput = entry.querySelector('input[name="postTypeUrl"]');
         
-        if (nameInput && urlInput && nameInput.value && urlInput.value) {
+        if (typeSelect && nameInput && urlInput && nameInput.value && urlInput.value) {
             postTypes.push({
+                migrationType: typeSelect.value,
                 name: nameInput.value.trim(),
                 sourceUrl: urlInput.value.trim()
             });
@@ -78,7 +112,7 @@ async function handleSubmit(event) {
         const postTypes = getPostTypes();
         
         if (postTypes.length === 0) {
-            throw new Error('Please add at least one post type to migrate');
+            throw new Error('Please add at least one migration source (post type or page template)');
         }
         
         const formData = {

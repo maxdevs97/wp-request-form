@@ -73,11 +73,14 @@ async function clearNotification(filename) {
 // Format request data for Slack message
 function formatSlackMessage(requestData) {
   const postTypesFormatted = requestData.postTypes
-    .map(pt => `  • ${pt.name} from ${pt.sourceUrl}`)
+    .map(pt => {
+      const typeLabel = pt.migrationType === 'pageTemplate' ? 'Page Template' : 'Post Type';
+      return `  • ${typeLabel}: ${pt.name} from ${pt.sourceUrl}`;
+    })
     .join('\n');
   
   return `
-🚀 *New WordPress Site Request*
+🚀 *New WordPress Site Request* (Auto-Processing)
 
 *Request ID:* \`${requestData.id}\`
 *Requester:* ${requestData.requesterName} (${requestData.requesterEmail})
@@ -86,18 +89,19 @@ ${requestData.projectDescription ? `*Description:* ${requestData.projectDescript
 
 *Replit Frontend URL:* ${requestData.replitUrl}
 
-*Post Types to Migrate:*
+*Migration Sources:*
 ${postTypesFormatted}
 
 *Submitted:* ${new Date(requestData.timestamp).toLocaleString()}
+*Status:* Processing automatically (no approval required)
 
 ---
-_Ready for automation. Forge should:_
+_Automated workflow initiated. Forge should:_
 1. Create droplet from snapshot
 2. Configure plugin with Replit URL
-3. Migrate specified post types
+3. Migrate specified post types/templates
 4. Generate admin credentials
-5. Report results to Max
+5. Report results to Max and requester
 `.trim();
 }
 
